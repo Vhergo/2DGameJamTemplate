@@ -1,4 +1,4 @@
-# GameJamTemplate
+# 2DGameJamTemplate
 
 Comes with the following basics:
 
