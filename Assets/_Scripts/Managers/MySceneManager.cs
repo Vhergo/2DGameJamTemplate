@@ -1,4 +1,5 @@
 using System.Collections;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -66,7 +67,12 @@ public class MySceneManager : MonoBehaviour
     }
 
     public void QuitGame() {
-        Application.Quit();
+        Debug.Log("Quit Game");
+        #if UNITY_EDITOR
+            EditorApplication.isPlaying = false;
+        #else
+            Application.Quit();
+        #endif
     }
 
     private void HandleSceneInput() {

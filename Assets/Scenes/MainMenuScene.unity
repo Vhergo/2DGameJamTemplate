@@ -2171,7 +2171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   loadingScreen: {fileID: 1094647176}
-  loadingScreenDuration: 2
+  loadingScreenDuration: 1
 --- !u!4 &1835935575
 Transform:
   m_ObjectHideFlags: 0
@@ -2248,7 +2248,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3008e76b8286dc44386733b476b837fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectSound: {fileID: 8300000, guid: 23ad7e67e298a5a4e917425dff344970, type: 3}
+  selectSound: {fileID: 8300000, guid: 2fd275f99b545c64aa455abc845f8744, type: 3}
   hoverSound: {fileID: 8300000, guid: 82d792800e714044f9e938bf2343de2d, type: 3}
   releaseSound: {fileID: 0}
   exitSound: {fileID: 0}
