@@ -17,3 +17,6 @@ Comes with the following basics:
      
 - Cinemachine already imported:
     - Simple camera shake script triggerable from anywhere
+
+Coming Soon:
+- General reusable scripts (e.g. player movement, animation controller, cursor manager)
