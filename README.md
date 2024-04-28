@@ -33,5 +33,6 @@ Comes with the following basics:
     - Adjust default values as you see fit
 
 Coming Soon:
+- More detailed documentation
 - General reusable scripts (e.g. player movement, animation controller, cursor manager)
 - 3D template
