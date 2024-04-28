@@ -4,10 +4,12 @@ using Unity.VisualScripting;
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Data;
 
 public class Grid2DPlacerEditor : EditorWindow
 {
     #region VARIABLES
+    private Grid2DPlacerData toolDataStorage;
     public List<PrefabGroup> prefabGroups = new List<PrefabGroup>();
     public int selectedIndex = 0;
     public int prefabLoadIndex = 0;
@@ -32,14 +34,48 @@ public class Grid2DPlacerEditor : EditorWindow
     private GUIStyle headerStyle;
     private GUIStyle horizontalScrollbarStyle;
     private GUIStyle verticalScrollbarNone;
+
+    private string storageAssetPath;
     #endregion
 
 
     [MenuItem("Tools/2D Grid Placer")]
     public static void ShowWindow()
     {
-        GetWindow<Grid2DPlacerEditor>("2D Grid Placer");
+        Grid2DPlacerEditor window = (Grid2DPlacerEditor)EditorWindow.GetWindow(typeof(Grid2DPlacerEditor), false, "2D Grid Placer");
+        window.Init();
     }
+
+    #region INITIALIZATION
+
+    // Use Init like this to avoid OnEnable
+    // OnEnable causes the GetStoredData method to be called everytime unity recompiles scripts
+    private void Init()
+    {
+        if (storageAssetPath == null) {
+            string scriptPath = GetScriptFilePath("Grid2DPlacerEditor"); // Get the path of the current script
+            string directory = Path.GetDirectoryName(scriptPath); // Extract the directory
+            storageAssetPath = Path.Combine(directory, "StoredToolData"); // Formulate the complete path
+        }
+
+        if (File.Exists(storageAssetPath)) {
+            string json = File.ReadAllText(storageAssetPath);
+            toolDataStorage = JsonUtility.FromJson<Grid2DPlacerData>(json);
+            GetStoredData();
+        } else {
+            toolDataStorage = new Grid2DPlacerData();
+        }
+    }
+
+    private void OnDisable()
+    {
+        StoreToolData();
+
+        string json = JsonUtility.ToJson(toolDataStorage, true);
+        File.WriteAllText(storageAssetPath, json);
+        AssetDatabase.Refresh();
+    }
+    #endregion
 
     #region EVENT SUBSCRIPTIONS
     private void OnFocus()
@@ -48,15 +84,10 @@ public class Grid2DPlacerEditor : EditorWindow
         updateHeader = true;
     }
 
-    private void OnLostFocus()
-    {
-        SceneView.duringSceneGui -= OnSceneGUI;
-        canPlace = false;
-    }
-
     private void OnDestroy()
     {
         SceneView.duringSceneGui -= OnSceneGUI;
+        canPlace = false;
     }
     #endregion
 
@@ -306,8 +337,10 @@ public class Grid2DPlacerEditor : EditorWindow
     // Clear all placed tiles under the currently designated parent transform
     private void ClearAllTiles()
     {
-        while (gridOrigin.childCount > 0) {
-            Undo.DestroyObjectImmediate(gridOrigin.GetChild(0).gameObject);
+        foreach (PrefabGroup group in prefabGroups) {
+            while (group.parent.childCount > 0) {
+                Undo.DestroyObjectImmediate(group.parent.GetChild(0).gameObject);
+            }
         }
     }
 
@@ -352,11 +385,6 @@ public class Grid2DPlacerEditor : EditorWindow
     #endregion
 
     #region HELPER FUNCTIONS
-    private void SimpleDivider(float height = 2f)
-    {
-        GUILayout.Box("", new GUILayoutOption[] { GUILayout.ExpandWidth(true), GUILayout.Height(height) });
-    }
-
     private bool CheckIfValidNameWasInput(string prefabName)
     {
         if (prefabName.Length > 0) {
@@ -367,7 +395,72 @@ public class Grid2DPlacerEditor : EditorWindow
         }
     }
 
+    private void StoreToolData()
+    {
+        PrefabGroupSave();
+        toolDataStorage.selectedIndex = selectedIndex;
+        toolDataStorage.prefabLoadIndex = prefabLoadIndex;
+        toolDataStorage.tilePrefabName = (tilePrefab != null) ? tilePrefab.name : "";
+        toolDataStorage.gridOriginHierarchyPath = GetHierarchyPath(gridOrigin);
+        toolDataStorage.gridTileSize = gridTileSize;
+        toolDataStorage.gridSize = gridSize;
+        toolDataStorage.canPlace = canPlace;
+        toolDataStorage.showGrid = showGrid;
+        toolDataStorage.allowDrag = allowDrag;
+        toolDataStorage.showPrefabNameFieldCreate = showPrefabNameFieldCreate;
+        toolDataStorage.showPrefabNameFieldLoad = showPrefabNameFieldLoad;
+    }
 
+    private void GetStoredData()
+    {
+        PrefabGroupLoad();
+        selectedIndex = toolDataStorage.selectedIndex;
+        prefabLoadIndex = toolDataStorage.prefabLoadIndex;
+        tilePrefab = Resources.Load<GameObject>("Tiles/" + toolDataStorage.tilePrefabName);
+        gridOrigin = FindTransformByPath(toolDataStorage.gridOriginHierarchyPath);
+        gridTileSize = toolDataStorage.gridTileSize;
+        gridSize = toolDataStorage.gridSize;
+        // canPlace = toolDataStorage.canPlace;
+        canPlace = false; // Default can place to false
+        showGrid = toolDataStorage.showGrid;
+        allowDrag = toolDataStorage.allowDrag;
+        showPrefabNameFieldCreate = toolDataStorage.showPrefabNameFieldCreate;
+        showPrefabNameFieldLoad = toolDataStorage.showPrefabNameFieldLoad;
+    }
+
+    private void PrefabGroupSave()
+    {
+        if (toolDataStorage.prefabGroups == null) toolDataStorage.prefabGroups = new List<PrefabGroupSave>();
+        toolDataStorage.prefabGroups.Clear(); // Clear existing data to prevent duplication or stale data
+
+        for (int i = 0; i < prefabGroups.Count; i++) {
+            toolDataStorage.prefabGroups.Add(new PrefabGroupSave());
+            toolDataStorage.prefabGroups[i].name = prefabGroups[i].name;
+            toolDataStorage.prefabGroups[i].prefabName = (prefabGroups[i].prefab != null) ? prefabGroups[i].prefab.name : "";
+            toolDataStorage.prefabGroups[i].parentHierarchyPath = GetHierarchyPath(prefabGroups[i].parent);
+        }
+    }
+
+    private void PrefabGroupLoad()
+    {
+        for (int i = 0; i < toolDataStorage.prefabGroups.Count; i++) {
+            prefabGroups.Add(new PrefabGroup());
+            prefabGroups[i].name = toolDataStorage.prefabGroups[i].name;
+            prefabGroups[i].prefab = Resources.Load<GameObject>("Tiles/" + toolDataStorage.prefabGroups[i].prefabName);
+            prefabGroups[i].parent = FindTransformByPath(toolDataStorage.prefabGroups[i].parentHierarchyPath);
+        }
+    }
+
+    private string GetScriptFilePath(string scriptName)
+    {
+        var guids = AssetDatabase.FindAssets(scriptName); // This finds all assets that match the scriptName, which can be multiple.
+        foreach (var guid in guids) {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            if (path.Contains(scriptName))
+                return path;
+        }
+        return null;
+    }
     #endregion
 
     #region PREFAB HANDLING FUNCTIONALITY
