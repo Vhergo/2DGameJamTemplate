@@ -17,7 +17,7 @@ public class Grid2DPlacerEditor : EditorWindow
     public Vector2Int gridSize = new Vector2Int(10, 10);
     public bool canPlace = false;
     public bool showGrid = true;
-    public bool allowDrag = false;
+    public bool allowDrag = true;
     public bool showPrefabNameFieldCreate = false;
     public bool showPrefabNameFieldLoad = false;
 

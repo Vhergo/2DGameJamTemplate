@@ -5,14 +5,23 @@ using UnityEngine.SceneManagement;
 
 public class MySceneManager : MonoBehaviour
 {
-    public static MySceneManager Instance;
+    public static MySceneManager Instance { get; private set; }
 
+    [Header("Loading Screen")]
     [SerializeField] private GameObject loadingScreen;
     [SerializeField] private float loadingScreenDuration = 2f;
     private bool isPaused;
 
-    private void Awake() {
-        if(Instance == null) {
+    [Header("Scene Input")]
+    [SerializeField] private KeyCode pauseKey = KeyCode.O;
+    [SerializeField] private KeyCode restartKey = KeyCode.P;
+
+    public SceneEnum currentScene = SceneEnum.MainMenuScene;
+    public GameState gameState = GameState.Play;
+
+    private void Awake()
+    {
+        if (Instance == null) {
             Instance = this;
             DontDestroyOnLoad(gameObject);
             DontDestroyOnLoad(loadingScreen);
@@ -21,11 +30,14 @@ public class MySceneManager : MonoBehaviour
         }
     }
 
-    private void Update() {
+    private void Update()
+    {
         HandleSceneInput();
     }
 
-    public void SwitchScene(SceneEnum scene, bool withLoadingScreen = false) {
+    public void SwitchScene(SceneEnum scene, bool withLoadingScreen = false)
+    {
+        currentScene = scene;
         if (withLoadingScreen) {
             StartCoroutine(LoadSceneWithLoadingScreen(scene));
         } else {
@@ -33,8 +45,10 @@ public class MySceneManager : MonoBehaviour
         }
     }
 
-    private IEnumerator LoadSceneWithLoadingScreen(SceneEnum scene) {
+    private IEnumerator LoadSceneWithLoadingScreen(SceneEnum scene)
+    {
         Time.timeScale = 0;
+        gameState = GameState.Pause;
         loadingScreen.SetActive(true);
 
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(scene.ToString());
@@ -46,46 +60,64 @@ public class MySceneManager : MonoBehaviour
 
         loadingScreen.SetActive(false);
         Time.timeScale = 1;
+        gameState = GameState.Play;
     }
 
-    public void RestartScene() {
+    public void RestartScene()
+    {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    public void PauseGameToggle() {
+    public void PauseGameToggle()
+    {
         if (SceneManager.GetActiveScene().name != "GameScene") return;
 
         if (isPaused) {
-            Time.timeScale = 1;
-            GameUIManager.Instance.TurnOffSettings();
-            isPaused = false;
-        }else {
-            Time.timeScale = 0;
-            GameUIManager.Instance.TurnOnSettings();
-            isPaused = true;
+            UnpauseGame();
+        } else {
+            PauseGame();
         }
     }
 
-    public void QuitGame() {
-        Debug.Log("Quit Game");
-        #if UNITY_EDITOR
-            EditorApplication.isPlaying = false;
-        #else
-            Application.Quit();
-        #endif
+    public void PauseGame()
+    {
+        Time.timeScale = 0;
+        GameUIManager.Instance.TurnOnSettings();
+        isPaused = true;
+        gameState = GameState.Pause;
     }
 
-    private void HandleSceneInput() {
-        if (Input.GetKeyDown(KeyCode.R)) {
+    public void UnpauseGame()
+    {
+        Time.timeScale = 1;
+        GameUIManager.Instance.TurnOffSettings();
+        isPaused = false;
+        gameState = GameState.Play;
+    }
+
+    public void QuitGame()
+    {
+        Debug.Log("Quit Game");
+#if UNITY_EDITOR
+        EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    private void HandleSceneInput()
+    {
+        if (Input.GetKeyDown(restartKey)) {
             RestartScene();
         }
 
-        if (Input.GetKeyDown(KeyCode.P) || Input.GetKeyDown(KeyCode.Escape)) {
+        if (Input.GetKeyDown(pauseKey) || Input.GetKeyDown(KeyCode.Escape)) {
             PauseGameToggle();
         }
     }
 
-    public bool LoadingScreenIsNotActive() {
+    public bool LoadingScreenIsNotActive()
+    {
         return !loadingScreen.activeSelf;
     }
 }
@@ -94,4 +126,10 @@ public enum SceneEnum
 {
     MainMenuScene,
     GameScene
+}
+
+public enum GameState
+{
+    Play,
+    Pause
 }
