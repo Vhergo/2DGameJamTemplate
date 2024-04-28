@@ -41,11 +41,24 @@ public class Grid2DPlacerEditor : EditorWindow
         GetWindow<Grid2DPlacerEditor>("2D Grid Placer");
     }
 
+    #region EVENT SUBSCRIPTIONS
     private void OnFocus()
     {
         SceneView.duringSceneGui += OnSceneGUI;
         updateHeader = true;
     }
+
+    private void OnLostFocus()
+    {
+        SceneView.duringSceneGui -= OnSceneGUI;
+        canPlace = false;
+    }
+
+    private void OnDestroy()
+    {
+        SceneView.duringSceneGui -= OnSceneGUI;
+    }
+    #endregion
 
     #region GUI FUNCTIONALITY
     void OnGUI()
@@ -234,6 +247,8 @@ public class Grid2DPlacerEditor : EditorWindow
     #region MAIN SCENE GUI FUNCTIONALITY
     void OnSceneGUI(SceneView sceneView)
     {
+        if (this == null || !this) return; // Check if the window is still valid/open
+
         DrawGrid();
 
         Event e = Event.current;
@@ -268,10 +283,12 @@ public class Grid2DPlacerEditor : EditorWindow
         RaycastHit2D hit = Physics2D.Raycast(alignedPosition, Vector2.zero, 0.1f);
         if (hit.collider == null) {  // Only place a tile if there is no collider hit
             GameObject tile = PrefabUtility.InstantiatePrefab(tilePrefab) as GameObject;
-            Undo.RegisterCreatedObjectUndo(tile, "Place Tile");
-            tile.transform.position = alignedPosition;
-            tile.transform.localScale = new Vector3(gridTileSize, gridTileSize, 1);  // Scale the tile
-            tile.transform.parent = gridOrigin;
+            if (tile != null) {
+                Undo.RegisterCreatedObjectUndo(tile, "Place Tile");
+                tile.transform.position = alignedPosition;
+                tile.transform.localScale = new Vector3(gridTileSize, gridTileSize, 1);  // Scale the tile
+                tile.transform.parent = gridOrigin;
+            }
         }
     }
 
@@ -280,7 +297,9 @@ public class Grid2DPlacerEditor : EditorWindow
         RaycastHit2D hit = Physics2D.Raycast(alignedPosition, Vector2.zero, 0.1f);
         if (hit.collider != null) {  // Check if there is a tile to remove
             GameObject tile = hit.collider.gameObject;
-            Undo.DestroyObjectImmediate(tile);  // Register undo for tile removal
+            if (tile != null) {
+                Undo.DestroyObjectImmediate(tile);  // Register undo for tile removal
+            }
         }
     }
 

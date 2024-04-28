@@ -21,7 +21,7 @@ Comes with the following basics:
 - 2D Grid Placer Tool
     - Access by going to Tools > 2D Grid Placer
     - Add different groups for every different type of tile prefab you would like to place
-    - Specify the parent object and prefab
+    - Specify the parent object and tile prefab (tile must have a collider)
     - Specify the grid size (this is a just a visual indicator to help you place tiles correctly)
     - Adjust toggle buttons as needed and place tiles to create your level
     - You can save your grid to Prefabs or to Files using the respective buttons
