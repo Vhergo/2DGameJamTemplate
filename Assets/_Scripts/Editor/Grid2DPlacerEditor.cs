@@ -400,8 +400,8 @@ public class Grid2DPlacerEditor : EditorWindow
         PrefabGroupSave();
         toolDataStorage.selectedIndex = selectedIndex;
         toolDataStorage.prefabLoadIndex = prefabLoadIndex;
-        toolDataStorage.tilePrefabName = (tilePrefab != null) ? tilePrefab.name : "";
-        toolDataStorage.gridOriginHierarchyPath = GetHierarchyPath(gridOrigin);
+        //toolDataStorage.tilePrefabName = (tilePrefab != null) ? tilePrefab.name : "";
+        //toolDataStorage.gridOriginHierarchyPath = GetHierarchyPath(gridOrigin);
         toolDataStorage.gridTileSize = gridTileSize;
         toolDataStorage.gridSize = gridSize;
         toolDataStorage.canPlace = canPlace;
@@ -467,19 +467,22 @@ public class Grid2DPlacerEditor : EditorWindow
     private void CreateGridPrefab(string prefabName)
     {
         GameObject prefabRoot = new GameObject(prefabName);
-        foreach (Transform child in gridOrigin) {
-            // Ensure the child is a prefab instance by checking if it has a prefab link
-            if (PrefabUtility.GetPrefabInstanceStatus(child.gameObject) == PrefabInstanceStatus.Connected) {
-                GameObject prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) as GameObject;
-                GameObject clone = PrefabUtility.InstantiatePrefab(prefabAsset) as GameObject;
-                clone.transform.position = child.position;
-                clone.transform.rotation = child.rotation;
-                clone.transform.localScale = child.localScale;
-                clone.transform.SetParent(prefabRoot.transform, false);
-            } else {
-                // If it's not a prefab, instantiate it normally
-                GameObject clone = Instantiate(child.gameObject);
-                clone.transform.SetParent(prefabRoot.transform, false);
+        foreach (PrefabGroup group in prefabGroups) {
+            GameObject groupRoot = new GameObject(group.name);
+            groupRoot.transform.SetParent(prefabRoot.transform, false);
+            foreach (Transform child in group.parent) {
+                if (PrefabUtility.GetPrefabInstanceStatus(child.gameObject) == PrefabInstanceStatus.Connected) {
+                    GameObject prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) as GameObject;
+                    GameObject clone = PrefabUtility.InstantiatePrefab(prefabAsset) as GameObject;
+                    clone.transform.position = child.position;
+                    clone.transform.rotation = child.rotation;
+                    clone.transform.localScale = child.localScale;
+                    clone.transform.SetParent(groupRoot.transform, false);
+                } else {
+                    GameObject clone = Instantiate(child.gameObject);
+                    clone.transform.SetParent(groupRoot.transform, false);
+                }
+
             }
         }
 
@@ -503,30 +506,29 @@ public class Grid2DPlacerEditor : EditorWindow
         ClearAllTiles(); // Clear existing tiles before loading
 
         if (selectedPrefab != null) {
-            foreach (Transform child in selectedPrefab.transform) {
-                // Get the prefab asset linked to the child GameObject
-                GameObject originalTilePrefab = PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) as GameObject;
-                if (originalTilePrefab != null) {
-                    // Instantiate a new instance of the prefab type
-                    GameObject loadedTile = PrefabUtility.InstantiatePrefab(originalTilePrefab) as GameObject;
-                    if (loadedTile != null) {
-                        loadedTile.transform.SetParent(gridOrigin, false); // Reparent
-                        loadedTile.transform.localPosition = child.localPosition; // Adjust local transform settings
-                        loadedTile.transform.localRotation = child.localRotation;
-                        loadedTile.transform.localScale = child.localScale;
+            for (int i = 0; i < prefabGroups.Count; i++) {
+                foreach (Transform child in selectedPrefab.transform.GetChild(i)) {
+                    GameObject originalTilePrefab = PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) as GameObject;
+                    if (originalTilePrefab != null) {
+                        GameObject loadedTile = PrefabUtility.InstantiatePrefab(originalTilePrefab) as GameObject;
+                        if (loadedTile != null) {
+                            loadedTile.transform.SetParent(prefabGroups[i].parent, false);
+                            loadedTile.transform.localPosition = child.localPosition;
+                            loadedTile.transform.localRotation = child.localRotation;
+                            loadedTile.transform.localScale = child.localScale;
+                        } else {
+                            Debug.LogError("Failed to instantiate a tile prefab of type: " + child.name);
+                        }
                     } else {
-                        Debug.LogError("Failed to instantiate a tile prefab of type: " + child.name);
+                        Debug.LogWarning("The original tile prefab was not found for: " + child.name + ". Attempting to instantiate directly.");
+                        Instantiate(child.gameObject, prefabGroups[i].parent);
                     }
-                } else {
-                    Debug.LogWarning("The original tile prefab was not found for: " + child.name);
                 }
             }
         } else {
             Debug.LogError("No grid prefab was selected");
         }
     }
-
-
 
     #endregion
 

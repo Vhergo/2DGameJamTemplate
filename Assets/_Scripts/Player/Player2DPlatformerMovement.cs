@@ -456,7 +456,11 @@ public class Player2DPlatformerMovement : MonoBehaviour
 
     void OnValidate()
     {
-        if (rb == null) rb = GetComponent<Rigidbody2D>();
+        if (rb == null) {
+            rb = GetComponent<Rigidbody2D>();
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation; // Freeze Z rotation
+        }
 
         accelForce = (50 * acceleration) / maxSpeed;
         deccelForce = (50 * decceleration) / maxSpeed;
