@@ -1,14 +1,21 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.Tilemaps;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(TrailRenderer))]
 public class Player2DPlatformerMovement : MonoBehaviour
 {
     [SerializeField] private bool isDead;
     public bool IsDead { get; set; }
+
+    [SerializeField] private AudioClip jumpSound;
+    [SerializeField] private AudioClip landSound;
+
+    [SerializeField] private PlayerControls playerControls;
+    private InputAction move;
+    private InputAction jump;
+    private InputAction dash;
 
     #region VARIABLES
     [Header("Available Controls")]
@@ -128,6 +135,33 @@ public class Player2DPlatformerMovement : MonoBehaviour
 
     #endregion
 
+    private void Awake()
+    {
+        playerControls = new PlayerControls();
+        ValidateAndInitialize();
+    }
+
+    private void OnEnable()
+    {
+        move = playerControls.Player.Movement;
+        jump = playerControls.Player.Jump;
+        dash = playerControls.Player.Dash;
+
+        move.Enable();
+        jump.Enable();
+        dash.Enable();
+
+        jump.performed += JumpInput;
+        dash.performed += DashInput;
+    }
+
+    private void OnDisable()
+    {
+        move.Disable();
+        jump.Disable();
+        dash.Disable();
+    }
+
     void Start()
     {
         originalGravityScale = rb.gravityScale;
@@ -159,21 +193,28 @@ public class Player2DPlatformerMovement : MonoBehaviour
         ControlToggles();
     }
 
+    void JumpInput(InputAction.CallbackContext context) => jumpInput = true;
+    void DashInput(InputAction.CallbackContext context) => dashInput = true;
+
     void ProccessInput()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-        moveDirection = new Vector2(horizontal, vertical).normalized;
+        //float horizontal = Input.GetAxisRaw("Horizontal");
+        //float vertical = Input.GetAxisRaw("Vertical");
+        //moveDirection = new Vector2(horizontal, vertical).normalized;
+        moveDirection = move.ReadValue<Vector2>().normalized;
+
         wallClimbDirection = moveDirection.y;
 
-        if (Input.GetButtonDown("Jump")) jumpInput = true;
-        if (Input.GetKeyDown(KeyCode.LeftShift)) dashInput = true;
         crouchInput = (Input.GetKey(KeyCode.LeftControl)) ? true : false;
 
-        WallInteractions(horizontal, vertical);
+        WallInteractions(moveDirection.x, moveDirection.y);
 
         isFalling = rb.velocity.y < 0 ? true : false;
         if (IsGrounded()) {
+            if (isJumping) {
+                if (SoundManager.Instance != null) SoundManager.Instance.PlaySound(landSound);
+            }
+
             isFalling = isJumping = false;
             jumpCounter = tempJumpLimit;
             airTimeCounter = airTime;
@@ -218,6 +259,8 @@ public class Player2DPlatformerMovement : MonoBehaviour
 
             rb.velocity = new Vector2(rb.velocity.x, 0);
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+
+            if (SoundManager.Instance != null) SoundManager.Instance.PlaySound(jumpSound);
 
             if (isCrouching) CrouchUp();
         }
@@ -450,11 +493,7 @@ public class Player2DPlatformerMovement : MonoBehaviour
         airTimeCounter -= Time.deltaTime;
     }
 
-    #endregion
-
-    // -----------------------------------------------------
-
-    void OnValidate()
+    private void ValidateAndInitialize()
     {
         if (rb == null) {
             rb = GetComponent<Rigidbody2D>();
@@ -480,5 +519,14 @@ public class Player2DPlatformerMovement : MonoBehaviour
 
         tempWallGrabTime = toggleWallGrabOff ? 0 : wallGrabTime;
         wallGrabCounter = tempWallGrabTime;
+    }
+
+    #endregion
+
+    // -----------------------------------------------------
+
+    void OnValidate()
+    {
+        ValidateAndInitialize();
     }
 }

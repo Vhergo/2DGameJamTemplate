@@ -1261,6 +1261,7 @@ MonoBehaviour:
   effectsSource: {fileID: 829949439}
   mainMenuMusic: {fileID: 8300000, guid: 68e4bc2623b6ddd46af10caa0b384433, type: 3}
   inGameMusic: {fileID: 8300000, guid: bed7a10f43423f94e865e6f0e75a1cfa, type: 3}
+  pitchRange: {x: 0.8, y: 1.2}
 --- !u!4 &1353709093
 Transform:
   m_ObjectHideFlags: 0
@@ -2172,6 +2173,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   loadingScreen: {fileID: 1094647176}
   loadingScreenDuration: 1
+  pauseKey: 111
+  restartKey: 112
+  currentScene: 0
+  gameState: 0
 --- !u!4 &1835935575
 Transform:
   m_ObjectHideFlags: 0
@@ -2198,6 +2203,7 @@ GameObject:
   - component: {fileID: 1838337457}
   - component: {fileID: 1838337456}
   - component: {fileID: 1838337458}
+  - component: {fileID: 1838337459}
   m_Layer: 0
   m_Name: UIManager
   m_TagString: Untagged
@@ -2252,6 +2258,18 @@ MonoBehaviour:
   hoverSound: {fileID: 8300000, guid: 82d792800e714044f9e938bf2343de2d, type: 3}
   releaseSound: {fileID: 0}
   exitSound: {fileID: 0}
+--- !u!114 &1838337459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1838337455}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a9a45291118cf946ba2bab0a6d8f04b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &8014890116716142169 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3288757480931450152, guid: 2730b95e3d7c06849ba983f9b64c6d24, type: 3}
