@@ -32,6 +32,9 @@ Comes with the following basics:
     - Create two empty objects (one on the bottom for the ground check and one on the left for the wall check; create and set the repective layers)
     - Adjust default values as you see fit
 
+- Save System:
+- Object Pooling:
+
 Coming Soon:
 - More detailed documentation
 - General reusable scripts (e.g. player movement, animation controller, cursor manager)
